@@ -4,8 +4,10 @@ import { Authenticated, Unauthenticated } from "convex/react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "../styles/Navbar.css";
+import CreateDropdown from "./CreateDropdown";
 
 const NavBar = () => {
+  const [showDropdown, setShowDropdown] = useState(false);
   const { user } = useUser();
   const navigate = useNavigate();
 
@@ -28,10 +30,15 @@ const NavBar = () => {
           </Unauthenticated>
           <Authenticated>
             <div className="dropdown-container">
-              <button className="icon-button" onClick={() => {}}>
+              <button className="icon-button" onClick={() => setShowDropdown(true)}>
                 <FaPlus />
               </button>
-              {/* dropdown container */}
+              {showDropdown && (
+                <CreateDropdown
+                  isOpen={showDropdown}
+                  onClose={() => setShowDropdown(false)}
+                />
+              )}
             </div>
             <button
               className="icon-button"
