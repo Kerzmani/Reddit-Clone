@@ -20,7 +20,7 @@ export const schema = defineSchema({
     body: v.string(),
     subreddit: v.id("subreddit"),
     authorId: v.id("users"),
-    image: v.optional(v.id("storage")),
+    image: v.optional(v.id("_storage")),
   })
     .index("bySubreddit", ["subreddit"])
     .index("byAuthor", ["authorId"]),
