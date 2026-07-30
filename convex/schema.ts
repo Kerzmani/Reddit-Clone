@@ -13,7 +13,17 @@ export const schema = defineSchema({
     name: v.string(),
     description: v.optional(v.string()),
     authorId: v.id("users"),
+  }),
+
+  post: defineTable({
+    subject: v.string(),
+    body: v.string(),
+    subreddit: v.id("subreddit"),
+    authorId: v.id("users"),
+    image: v.optional(v.id("storage")),
   })
+    .index("bySubreddit", ["subreddit"])
+    .index("byAuthor", ["authorId"]),
 });
 
 export default schema;
