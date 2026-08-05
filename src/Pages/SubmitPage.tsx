@@ -5,6 +5,7 @@ import { api } from "../../convex/_generated/api";
 import { FaImage } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import "../styles/SubmitPage.css";
+import { GoContainer } from "react-icons/go";
 
 const SubmitPage = () => {
   const { subredditName } = useParams();
@@ -31,6 +32,28 @@ const SubmitPage = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createPost = useMutation(api.post.create);
+  const generateUploadUrl = useMutation(api.image.generateUploadUrl);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image size should be less than 5MB");
+        return;
+      }
+      setSelectedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +94,29 @@ const SubmitPage = () => {
             required
             maxLength={100}
           />
+          <div className="media-input-container">
+            <label className="image-upload-label">
+              <FaImage className="image-icon" />
+              Upload Image
+              <input
+                type="file"
+                accept="image"
+                onChange={handleImageSelect}
+                style={{ display: "none" }}
+              />
+            </label>
+            {imagePreview && (
+              <div className='image-preview-container'>
+                <img src={imagePreview} alt='Preview' className='image-preview' />
+                <button 
+                  type='button' 
+                  className='remove-image-button' 
+                  onClick={handleRemoveImage}>
+                  <IoMdClose /> 
+                </button>
+              </div>
+            )}
+          </div>
           <textarea
             placeholder="Text (optional)"
             value={body}
