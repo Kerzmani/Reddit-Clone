@@ -114,14 +114,23 @@ const PostCard = ({
   expandedView = false,
 }: PostCardProps) => {
   const [showComments, setShowComments] = useState(expandedView);
-  const navigage = useNavigate();
+  const navigate = useNavigate();
   const { user } = useUser();
   const ownedByCurrentUser = post.author?.username === user?.username;
 
+  const deletePost = useMutation(api.post.deletePost);
+
   const handleComment = () => {};
 
-  const handleDelete = async () => {};
-
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this post?")) {
+      await deletePost({id: post._id});
+      if (expandedView) {
+        navigate("/");
+      }
+    }
+  };
+  
   const handleSubmitComment = (content: string) => {};
 
   return (
