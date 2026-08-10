@@ -1,9 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { getCurrentUserOrThrow } from "./users";
 import { ConvexError, v } from "convex/values";
-
-
-
+import { getEnrichedPosts } from "./post";
 
 export const create = mutation({
   args: {
@@ -14,24 +12,31 @@ export const create = mutation({
     const user = await getCurrentUserOrThrow(ctx);
     const subreddits = await ctx.db.query("subreddit").collect();
     if (subreddits.some((s) => s.name === args.name)) {
-      throw new ConvexError({message: "Subreddit name already exists"})
+      throw new ConvexError({ message: "Subreddit name already exists" });
     }
     await ctx.db.insert("subreddit", {
       name: args.name,
       description: args.description,
-      authorId: user._id
-    })
-
-  }
-})
+      authorId: user._id,
+    });
+  },
+});
 
 export const get = query({
-  args: {name: v.string()},
+  args: { name: v.string() },
   handler: async (ctx, args) => {
     const subreddit = await ctx.db
-    .query("subreddit").filter((q) => q.eq(q.field("name"),args.name))
-    .unique();
+      .query("subreddit")
+      .filter((q) => q.eq(q.field("name"), args.name))
+      .unique();
     if (!subreddit) return null;
-    return subreddit;
+
+    const post = await ctx.db.query("post")
+    .withIndex("bySubreddit", (q) => q.eq("subreddit", subreddit._id))
+    .collect();
+
+    const enrichedPosts = await getEnrichedPosts(ctx, post)
+
+    return {...subreddit, posts: enrichedPosts};
   },
-})
+});

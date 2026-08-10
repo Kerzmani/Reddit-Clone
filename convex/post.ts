@@ -61,7 +61,7 @@ async function getEnrichedPost(
   };
 }
 
-async function getEnrichedPosts(
+export async function getEnrichedPosts(
   ctx: QueryCtx,
   posts: Doc<"post">[],
 ): Promise<EnrichedPost[]> {
@@ -72,10 +72,10 @@ export const getPost = query({
   args: {id: v.id("post")},
   handler: async (ctx, args) => {
     const post = await ctx.db.get(args.id)
-    if (!post) reurn null
+    if (!post) return null
 
     return getEnrichedPost(ctx, post)
-  }
+  },
 })
 
 export const getSubredditPosts = query({
@@ -99,11 +99,11 @@ export const getSubredditPosts = query({
 
 export const userPosts = query({
   args: { authorUsername: v.string()},
-  handler: async (ctx, args): Promise<EnrichedPost> => {
+  handler: async (ctx, args): Promise<EnrichedPost[]> => {
     const user = await ctx.db
     .query("users")
-    .filter((q) => q.eq(q.field("username"), args.authorUsername))
-    .unique()
+    .withIndex("byUsername", (q) => q.eq("username", args.authorUsername))
+    .first()
 
     if (!user) return [];
 
