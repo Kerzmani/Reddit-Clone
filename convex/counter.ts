@@ -15,10 +15,4 @@ export function postCountKey(userId: Id<"users">) {
 return `post:${userId}`
 }
 
-export function upvoteKey(postId: Id<"post">) {
-return `upvotes:${postId}`
-}
 
-export function downvoteKey(postId: Id<"post">) {
-return `downvotes:${postId}`
-}

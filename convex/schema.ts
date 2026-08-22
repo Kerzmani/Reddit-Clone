@@ -25,10 +25,22 @@ export const schema = defineSchema({
     .index("bySubreddit", ["subreddit"])
     .index("byAuthor", ["authorId"]),
   comments: defineTable({
-    content : v.string(),
-    postId: v.id('post'),
-    authorId: v.id('users')
-  }).index('byPost', ['postId'])
+    content: v.string(),
+    postId: v.id("post"),
+    authorId: v.id("users"),
+  }).index("byPost", ["postId"]),
+  downvote: defineTable({
+    postId: v.id("post"),
+    userId: v.id("users"),
+  })
+    .index("byPost", ["postId"])
+    .index("byUser", ["userId"]),
+  upvote: defineTable({
+    postId: v.id("post"),
+    userId: v.id("users"),
+  })
+    .index("byPost", ["postId"])
+    .index("byUser", ["userId"]),
 });
 
 export default schema;

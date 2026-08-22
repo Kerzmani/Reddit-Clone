@@ -50,6 +50,50 @@ interface CommentSectionProps {
   signedIn: boolean;
 }
 
+interface VoteButtonProps {
+  postId: Id<"post">;
+  voteCounts: { total: number; upvotes: number; downvotes: number } | undefined;
+  hasUpvoted: boolean | undefined;
+  hasDownvoted: boolean | undefined;
+  onUpvote: () => void;
+  onDownvote: () => void;
+}
+
+const VoteButtons = ({
+  voteCounts,
+  hasUpvoted,
+  hasDownvoted,
+  onUpvote,
+  onDownvote,
+}: VoteButtonProps) => {
+  return (
+    <div className="post-votes">
+      <span className="vote-count upvote-count">
+        {voteCounts?.upvotes ?? 0}
+      </span>
+      <button
+        className={`vote-button ${hasUpvoted ? "voted" : ""}`}
+        onClick={onUpvote}
+      >
+        <TbArrowBigUp size={24} />
+      </button>
+
+      <span className="vote-count downvote-count">
+        {voteCounts?.downvotes ?? 0}
+      </span>
+
+      <span className="vote-count total-count">{voteCounts?.total ?? 0}</span>
+
+      <button
+        className={`vote-button ${hasDownvoted ? "voted" : ""}`}
+        onClick={onDownvote}
+      >
+        <TbArrowBigDown size={24} />
+      </button>
+    </div>
+  );
+};
+
 const PostHeader = ({
   author,
   subreddit,
@@ -172,15 +216,26 @@ const PostCard = ({
   const deletePost = useMutation(api.post.deletePost);
 
   const createComment = useMutation(api.comments.create);
-
   const comments = useQuery(api.comments.getComments, { postId: post._id });
-  const commentCount = useQuery(api.comments.getCommentCount, {postId: post._id})
+  const toggleUpvote = useMutation(api.vote.toggleUpVote);
+  const toggleDownvote = useMutation(api.vote.toggleDownVote);
+
+  const voteCounts = useQuery(api.vote.getVoteCount, { postId: post._id });
+  const hasUpvoted = useQuery(api.vote.hasUpvoted, { postId: post._id });
+  const hasDownvoted = useQuery(api.vote.hasDownvoted, { postId: post._id });
+
+  const commentCount = useQuery(api.comments.getCommentCount, {
+    postId: post._id,
+  });
+
+  const onUpvote = () => {toggleUpvote({ postId: post._id }); };
+  const onDownvote = () => {toggleDownvote({ postId: post._id }); };
 
   const handleComment = () => {
     if (!expandedView) {
-      navigate(`/post/${post._id}`)
+      navigate(`/post/${post._id}`);
     } else {
-      setShowComments(!showComments)
+      setShowComments(!showComments);
     }
   };
 
@@ -196,12 +251,19 @@ const PostCard = ({
   const handleSubmitComment = (content: string) => {
     createComment({
       content,
-      postId: post._id
-    })
+      postId: post._id,
+    });
   };
 
   return (
     <div className={`post-card ${expandedView ? "expanded" : ""}`}>
+      <VoteButtons 
+        voteCounts={voteCounts}
+        hasUpvoted={hasUpvoted}
+        hasDownvoted={hasDownvoted}
+        onUpvote={user ? onUpvote : () => {}}
+        onDownvote={user ? onDownvote : () => {}}
+      />
       <div className="post-content">
         <PostHeader
           author={post.author}
