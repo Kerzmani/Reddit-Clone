@@ -22,28 +22,35 @@ const CreateCommunityModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
+
     if (!name) {
       setError("Community name is required.");
-      return
+      return;
     }
 
     if (name.length < 3 || name.length > 21) {
-      setError("Community name must be between 3 and 21 characters.")
+      setError("Community name must be between 3 and 21 characters.");
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(name)) {
-      setError("Community name can only contain letters, numbers, and underscores.");
+      setError(
+        "Community name can only contain letters, numbers, and underscores.",
+      );
       return;
     }
 
     setIsLoading(true);
-    await createSubreddit({name, description}).then((result) => {
-      console.error(result)
-      onClose();
-    }).catch((err) => {
-      setError(`Failed to create community. ${err.message}`).finally(() => setIsLoading(false));
-    }).finally(() => setIsLoading(false));
+    await createSubreddit({ name, description })
+      .then((result) => {
+        console.error(result);
+        onClose();
+      })
+      .catch((err) => {
+        setError(`Failed to create community. ${err.message}`).finally(() =>
+          setIsLoading(false),
+        );
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return (

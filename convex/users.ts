@@ -1,6 +1,7 @@
 import { internalMutation, query, QueryCtx } from "./_generated/server";
 import { UserJSON } from "@clerk/backend";
 import { v, Validator } from "convex/values";
+import { counter, postCountKey } from "./counter";
 
 export const current = query({
   args: {},
@@ -61,3 +62,17 @@ async function userByExternalId(ctx: QueryCtx, externalId: string) {
     .withIndex("byExternalId", (q) => q.eq("externalId", externalId))
     .unique();
 }
+
+export const getPublicUser = query({
+  args: {username: v.string()},
+  handler: async (ctx, args) => {
+    const user = await ctx.db.query("users").withIndex("byUsername", (q) => q.eq("username", args.username)).first();
+
+  if (!user) return {posts: 0}
+
+  const postCount = await counter.count(ctx, postCountKey(user._id))
+  return {
+    posts: Math.max(0, postCount)
+    }
+  }
+})

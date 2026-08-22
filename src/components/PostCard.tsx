@@ -174,6 +174,7 @@ const PostCard = ({
   const createComment = useMutation(api.comments.create);
 
   const comments = useQuery(api.comments.getComments, { postId: post._id });
+  const commentCount = useQuery(api.comments.getCommentCount, {postId: post._id})
 
   const handleComment = () => {
     if (!expandedView) {
@@ -218,7 +219,7 @@ const PostCard = ({
         <div className="post-actions">
           <button className="action-button" onClick={handleComment}>
             <FaRegCommentAlt />
-            <span> 0 comments </span>
+            <span> {commentCount ?? 0} comments </span>
           </button>
           {ownedByCurrentUser && (
             <button
