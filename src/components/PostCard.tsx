@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import { useUser } from "@clerk/clerk-react";
-import Comment from "./comment";
+import Comment from "./Comment";
 import "../styles/PostCard.css";
 import { useState } from "react";
 
@@ -15,6 +15,7 @@ interface Post {
   body: string;
   _creationTime: number;
   authorId: string;
+  image?: string;
   author?: {
     username: string;
   };
@@ -258,6 +259,7 @@ const PostCard = ({
   return (
     <div className={`post-card ${expandedView ? "expanded" : ""}`}>
       <VoteButtons 
+        postId={post._id}
         voteCounts={voteCounts}
         hasUpvoted={hasUpvoted}
         hasDownvoted={hasDownvoted}

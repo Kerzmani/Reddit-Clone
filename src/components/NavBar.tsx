@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import "../styles/Navbar.css";
 import CreateDropdown from "./CreateDropdown";
+import SearchBar from "./SearchBar";
 
 const NavBar = () => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -20,7 +21,7 @@ const NavBar = () => {
             <span className="site-name">reddit</span>
           </div>
         </Link>
-        <div>SearchBar</div>
+        <SearchBar />
 
         <div className="nav-actions">
           <Unauthenticated>
