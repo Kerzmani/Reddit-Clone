@@ -31,12 +31,28 @@ export const get = query({
       .unique();
     if (!subreddit) return null;
 
-    const post = await ctx.db.query("post")
-    .withIndex("bySubreddit", (q) => q.eq("subreddit", subreddit._id))
-    .collect();
+    const post = await ctx.db
+      .query("post")
+      .withIndex("bySubreddit", (q) => q.eq("subreddit", subreddit._id))
+      .collect();
 
-    const enrichedPosts = await getEnrichedPosts(ctx, post)
+    const enrichedPosts = await getEnrichedPosts(ctx, post);
 
-    return {...subreddit, posts: enrichedPosts};
+    return { ...subreddit, posts: enrichedPosts };
+  },
+});
+
+export const search = query({
+  args: { queryStr: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.queryStr) return [];
+
+    const subreddits = await ctx.db
+      .query("subreddit")
+      .withSearchIndex("search_body", (q) => q.search("name", args.queryStr)).take(10);
+
+      return subreddits.map((sub) => {
+        return {...sub, type: "community", title: sub.name}
+      })
   },
 });

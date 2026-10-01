@@ -5,7 +5,7 @@ import { counter } from "./counter";
 
 type VoteType = "upvote" | "downvote";
 
-function voteKey(postId: string, voteType: VoteType): string {
+export function voteKey(postId: string, voteType: VoteType): string {
   return `${voteType}:${postId}`;
 }
 
@@ -17,6 +17,17 @@ export function createToggleVoteMutation(voteType: VoteType) {
       const oppositeVoteType: VoteType =
         voteType === "upvote" ? "downvote" : "upvote";
 
+      // Debug logging
+      try {
+        console.log("vote.toggle start", {
+          voteType,
+          postId: String(args.postId),
+          userId: String(user._id),
+        });
+      } catch (e) {
+        // no-op if logging fails
+      }
+
       const existingVote = await ctx.db
         .query(voteType)
         .withIndex("byPost", (q) => q.eq("postId", args.postId))
@@ -24,6 +35,12 @@ export function createToggleVoteMutation(voteType: VoteType) {
         .unique();
 
       if (existingVote) {
+        try {
+          console.log("vote.toggle: removing existing same vote", {
+            voteType,
+            existingId: String(existingVote._id),
+          });
+        } catch {}
         await ctx.db.delete(existingVote._id);
         await counter.dec(ctx, voteKey(args.postId, voteType));
         return;
@@ -36,6 +53,12 @@ export function createToggleVoteMutation(voteType: VoteType) {
         .unique();
 
       if (existingOppositeVote) {
+        try {
+          console.log("vote.toggle: removing opposite vote", {
+            oppositeVoteType,
+            existingOppositeId: String(existingOppositeVote._id),
+          });
+        } catch {}
         await ctx.db.delete(existingOppositeVote._id);
         await counter.dec(ctx, voteKey(args.postId, oppositeVoteType));
       }
@@ -45,6 +68,12 @@ export function createToggleVoteMutation(voteType: VoteType) {
         userId: user._id,
       });
       await counter.inc(ctx, voteKey(args.postId, voteType));
+
+      try {
+        console.log("vote.toggle: inserted and incremented", {
+          voteKey: voteKey(args.postId, voteType),
+        });
+      } catch {}
     },
   });
 }
@@ -78,6 +107,7 @@ export const getVoteCount = query({
   handler: async (ctx, args) => {
     const upvotes = await counter.count(ctx, voteKey(args.postId, "upvote"))
     const downvotes = await counter.count(ctx, voteKey(args.postId, "downvote"))
-    return { upvotes, downvotes, total: upvotes - downvotes }
+    // total should represent the total number of votes on the post (non-negative)
+    return { upvotes, downvotes, total: upvotes + downvotes }
   }
 })

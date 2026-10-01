@@ -2,7 +2,7 @@ import { mutation, query, QueryCtx } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
 import { getCurrentUserOrThrow } from "./users";
 import { Doc, Id } from "./_generated/dataModel";
-import { counter, postCountKey } from "./counter"
+import { counter, postCountKey } from "./counter";
 
 type EnrichedPost = Omit<Doc<"post">, "subreddit"> & {
   author: { username: string } | undefined;
@@ -37,7 +37,7 @@ export const create = mutation({
       authorId: user._id,
       image: args.storageId || undefined,
     });
-    await counter.inc(ctx, postCountKey(user._id))
+    await counter.inc(ctx, postCountKey(user._id));
     return postId;
   },
 });
@@ -71,70 +71,97 @@ export async function getEnrichedPosts(
 }
 
 export const getPost = query({
-  args: {id: v.id("post")},
+  args: { id: v.id("post") },
   handler: async (ctx, args) => {
-    const post = await ctx.db.get(args.id)
-    if (!post) return null
+    const post = await ctx.db.get(args.id);
+    if (!post) return null;
 
-    return getEnrichedPost(ctx, post)
+    return getEnrichedPost(ctx, post);
   },
-})
+});
 
 export const getSubredditPosts = query({
-  args: { subredditName: v.string()},
+  args: { subredditName: v.string() },
   handler: async (ctx, args): Promise<EnrichedPost[]> => {
     const subreddit = await ctx.db
-    .query("subreddit")
-    .filter((q) => q.eq(q.field("name"), args.subredditName))
-    .unique()
+      .query("subreddit")
+      .filter((q) => q.eq(q.field("name"), args.subredditName))
+      .unique();
 
     if (!subreddit) return [];
 
     const posts = await ctx.db
-    .query("post")
-    .withIndex("bySubreddit", (q) => q.eq("subreddit", subreddit._id))
-    .collect();
+      .query("post")
+      .withIndex("bySubreddit", (q) => q.eq("subreddit", subreddit._id))
+      .collect();
 
-    return getEnrichedPosts(ctx, posts)
+    return getEnrichedPosts(ctx, posts);
   },
 });
 
 export const userPosts = query({
-  args: { authorUsername: v.string()},
+  args: { authorUsername: v.string() },
   handler: async (ctx, args): Promise<EnrichedPost[]> => {
     const user = await ctx.db
-    .query("users")
-    .withIndex("byUsername", (q) => q.eq("username", args.authorUsername))
-    .first()
+      .query("users")
+      .withIndex("byUsername", (q) => q.eq("username", args.authorUsername))
+      .first();
 
     if (!user) return [];
 
     const posts = await ctx.db
-    .query("post")
-    .withIndex("byAuthor", (q) => q.eq("authorId", user._id))
-    .collect();
+      .query("post")
+      .withIndex("byAuthor", (q) => q.eq("authorId", user._id))
+      .collect();
 
-    return getEnrichedPosts(ctx, posts)
+    return getEnrichedPosts(ctx, posts);
   },
 });
 
 export const deletePost = mutation({
-  args: {id: v.id("post")},
+  args: { id: v.id("post") },
   handler: async (ctx, args) => {
-    const post = await ctx.db.get(args.id)
-    if (!post) throw new ConvexError({message: ERROR_MESSAGES.POST_NOT_FOUND})
+    const post = await ctx.db.get(args.id);
+    if (!post)
+      throw new ConvexError({ message: ERROR_MESSAGES.POST_NOT_FOUND });
 
-    const user = await getCurrentUserOrThrow(ctx)
+    const user = await getCurrentUserOrThrow(ctx);
     if (post.authorId !== user._id) {
-      throw new ConvexError({message: ERROR_MESSAGES.UNAUTHORIZED_DELETE})
+      throw new ConvexError({ message: ERROR_MESSAGES.UNAUTHORIZED_DELETE });
     }
 
-    const currentCount = await counter.count(ctx, postCountKey(user._id))
+    const currentCount = await counter.count(ctx, postCountKey(user._id));
     if (currentCount > 0) {
-      await counter.dec(ctx, postCountKey(user._id))
+      await counter.dec(ctx, postCountKey(user._id));
     }
-    await ctx.db.delete(args.id)
+    await ctx.db.delete(args.id);
+  },
+});
 
-  }
-})
+export const search = query({
+  args: { queryStr: v.string(), subreddit: v.string() },
+  handler: async (ctx, args) => {
+    if (!args.queryStr) return [];
 
+    const subredditObj = await ctx.db
+      .query("subreddit")
+      .filter((q) => q.eq(q.field("name"), args.subreddit))
+      .unique();
+
+    if (!subredditObj) return [];
+
+    const posts = await ctx.db
+      .query("post")
+      .withSearchIndex("search_body", (q) =>
+        q.search("subject", args.queryStr).eq("subreddit", subredditObj._id),
+      )
+      .take(10);
+
+    return posts.map((post) => ({
+      _id: post._id,
+      title: post.subject,
+      type: "post",
+      name: subredditObj.name,
+    }));
+  },
+});

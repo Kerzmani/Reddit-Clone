@@ -21,9 +21,18 @@ const SearchBar = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isActive, setIsActive] = useState(false);
+  let results: SearchResult[] = [];
 
   // perform search query
-  const results: SearchResult[] = [];
+
+  if (!currentSubreddit) {
+    results = useQuery(api.subreddit.search, {
+      queryStr: searchQuery,
+    }) as SearchResult[];
+  } else {
+    results = useQuery(api.post.search, {queryStr: searchQuery, subreddit: currentSubreddit,
+    }) as SearchResult[];
+  }
 
   const handleFocus = () => {
     setIsActive(true);
@@ -116,4 +125,4 @@ const SearchBar = () => {
   );
 };
 
-export default SearchBar
+export default SearchBar;
